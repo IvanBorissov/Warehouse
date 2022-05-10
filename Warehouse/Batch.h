@@ -17,10 +17,13 @@ private:
 	void Copy(Batch const&);
 	bool setExpiryDate(int, int ,int);
 	bool setEntryDate(int, int, int);
+	void setExpiryFromChar(char*);
+	void setEntryFromChar(char*);
 	bool compareYears();
 
 public:
 	Batch();
+	Batch(int, int, int, char*, int, int, char*);
 	Batch(int, int, int, int, int, int, int, int, int, int, int);
 	Batch(Batch const&);
 	Batch& operator=(const Batch&);
@@ -35,8 +38,16 @@ public:
 	int getExpiryYear();
 
 	void setVolume(int);
+	void saveToFile(const char*);
 
-	void printBatch();
+	bool operator<(const Batch&) const;
+	bool operator>(const Batch&) const;
+	bool operator==(const Batch&) const;///compares if the expiry dates are the same
+	bool operator!=(const Batch&) const;///compares if the whole batch is different
+
+
+	friend std::ostream& operator<<(std::ostream& os, const Batch& batch);
+	friend std::istream& operator>>(std::istream& is, Batch& batch);
 };
 
 #endif

@@ -1,5 +1,6 @@
 #include <iostream>
 #include <cstring>
+#include <fstream>
 #include "Item.h"
 #include "Supplier.h"
 #include "Batch.h"
@@ -173,6 +174,58 @@ bool Batch::setEntryDate(int day, int month, int year)
 	return true;
 }
 
+void Batch::setExpiryFromChar(char* expiry)
+{
+	if (expiry[0] == '0')
+	{
+		this->expiryDay = int(expiry[1] - '0');
+	}
+	else
+	{
+		this->expiryDay = int((expiry[0]-'0')*10 + (expiry[1] - '0'));
+	}
+
+	if (expiry[3] == '0')
+	{
+		this->expiryMonth = int(expiry[4] - '0');
+	}
+	else
+	{
+		this->expiryMonth = int((expiry[3] - '0') * 10 + (expiry[4] - '0'));
+	}
+
+	this->expiryYear = int(expiry[6] - '0') * 1000;
+	this->expiryYear += int(expiry[7] - '0') * 100;
+	this->expiryYear += int(expiry[8] - '0') * 10;
+	this->expiryYear += int(expiry[9] - '0');
+}
+
+void Batch::setEntryFromChar(char* entry)
+{
+	if (entry[0] == '0')
+	{
+		this->entryDay = int(entry[1] - '0');
+	}
+	else
+	{
+		this->entryDay = int((entry[0] - '0') * 10 + (entry[1] - '0'));
+	}
+
+	if (entry[3] == '0')
+	{
+		this->entryMonth = int(entry[4] - '0');
+	}
+	else
+	{
+		this->entryMonth = int((entry[3] - '0') * 10 + (entry[4] - '0'));
+	}
+
+	this->entryYear = int(entry[6] - '0') * 1000;
+	this->entryYear += int(entry[7] - '0') * 100;
+	this->entryYear += int(entry[8] - '0') * 10;
+	this->entryYear += int(entry[9] - '0');
+}
+
 bool Batch::compareYears()
 {
 	if (this->entryYear > this->expiryYear)return false;
@@ -189,6 +242,18 @@ Batch::Batch()
 	this->ID_Supplier = -1;
 	this->quantity = -1;
 	this->totalVolume = -1;
+}
+
+Batch::Batch(int ID_b, int ID_i, int ID_s, char* expiry, int quantity, int totalVolume, char* entry)
+{
+	this->ID_Batch = ID_b;
+	this->ID_Item = ID_i;
+	this->ID_Supplier = ID_s;
+	this->quantity = quantity;
+	this->totalVolume = totalVolume;
+
+	setExpiryFromChar(expiry);
+	setEntryFromChar(entry);
 }
 
 Batch::Batch(Batch const&b)
@@ -265,9 +330,87 @@ void Batch::setVolume(int qnty)
 	this->totalVolume -= qnty;
 }
 
-void Batch::printBatch()
+void Batch::saveToFile(const char* fileName)
 {
-	cout << this->ID_Batch << " " << this->ID_Item << " " << this->ID_Supplier << endl;
-	cout << this->dateOfEntry << endl;
-	cout << this->dateOfExpiry << endl;
+	ofstream os(fileName);
+	if (!os)
+	{
+		cout << "No such file" << endl;
+		return;
+	}
+	os << *this;
+	os.close();
+}
+
+bool Batch::operator<(const Batch& batch) const
+{
+	if (this->expiryYear < batch.expiryYear)return true;
+	if (this->expiryYear == batch.expiryYear && this->expiryMonth < this->expiryMonth)return true;
+	if (this->expiryYear == batch.expiryYear && this->expiryMonth == batch.expiryMonth && this->expiryDay < batch.expiryDay)return true;
+	
+	return false;
+}
+
+bool Batch::operator>(const Batch& batch) const
+{
+	return !(*this < batch) && !(*this == batch);
+}
+
+bool Batch::operator==(const Batch& batch) const
+{
+	if (this->expiryYear == batch.expiryYear && this->expiryMonth == batch.expiryMonth && this->expiryDay == batch.expiryDay)return true;
+	return false;
+}
+
+bool Batch::operator!=(const Batch& batch) const
+{
+	if (!(*this == batch))return true;
+
+	return false;
+}
+
+std::ostream& operator<<(std::ostream& os, const Batch& batch)
+{
+	os << batch.ID_Batch << ";" << batch.ID_Item << ";" << batch.ID_Supplier << ";" << batch.dateOfExpiry << ";" << batch.quantity << ";" << batch.totalVolume << ";" << batch.dateOfEntry << ";" << endl;
+	return os;
+}
+
+std::istream& operator>>(std::istream& is, Batch& batch)
+{
+	int ID_i, ID_b, ID_s, quantity, totalVolume;
+	char entry[11], expiry[11], comma;
+
+	is >> ID_b;
+	is >> comma;
+
+	is >> ID_i;
+	is >> comma;
+
+	is >> ID_s;
+	is >> comma;
+
+	for (int i = 0; i < 10; i++)
+	{
+		is >> expiry[i];
+	}
+	expiry[10] = '\0';
+	is >> comma;
+
+	is >> quantity;
+	is >> comma;
+
+	is >> totalVolume;
+	is >> comma;
+
+	for (int i = 0; i < 10; i++)
+	{
+		is >> entry[i];
+	}
+	entry[10] = '\0';
+	is >> comma;
+
+	Batch a(ID_b, ID_i, ID_s, expiry, quantity, totalVolume, entry);
+	batch = a;
+
+	return is;
 }
