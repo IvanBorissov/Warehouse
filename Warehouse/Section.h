@@ -6,7 +6,7 @@
 struct Section
 {
 	int ID_Section,shelfCount=1;
-	Shelf Shelves[128];
+	Shelf Shelves[5];
 };
 
 #endif
