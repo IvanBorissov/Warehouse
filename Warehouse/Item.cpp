@@ -1,5 +1,6 @@
 #include <iostream>
 #include <cstring>
+#include <fstream>
 #include "Item.h"
 
 using namespace std;
@@ -117,4 +118,58 @@ void Item::setItem_parameter(char* newParameter)
 	sz = strlen(newParameter) + 1;
 	this->basicParameter = new char[sz];
 	strcpy_s(this->basicParameter, sz, newParameter);
+}
+
+bool Item::operator==(const Item& item) const
+{
+	if (strcmp(this->name, item.name) == true
+		&& strcmp(this->basicParameter, item.basicParameter) == true
+		&& this->volumeForOne == item.volumeForOne) return true;
+
+	return false;
+}
+
+void Item::saveToFile(const char* fileName)
+{
+	ofstream os(fileName);
+	if (!os)
+	{
+		cout << "No such file" << endl;
+		return;
+	}
+	os << *this;
+	os.close();
+}
+
+void Item::readFromFile(char*)
+{
+}
+
+ostream& operator<<(ostream& os, const Item& item)
+{
+	os << item.ID_Item << ";" << item.name << ";" << item.volumeForOne << ";" << item.basicParameter << ";" << endl;
+	return os;
+}
+
+istream& operator>>(istream& is, Item& item)
+{
+	int ID, volume;
+	char comma, name[512], parameter[128];
+
+	is >> ID;
+	is >> comma;
+
+	is.getline(name, 512, ';');
+	is >> comma;
+
+	is >> volume;
+	is >> comma;
+
+	is.getline(parameter, 128, ';');
+	is >> comma;
+
+	Item a(ID, name, volume, parameter);
+	item = a;
+
+	return is;
 }
