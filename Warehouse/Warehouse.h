@@ -17,19 +17,20 @@ private:
 	Supplier Suppliers[128];
 	int itemCount, batchCount, supplierCount, sectionCount;
 
+	void sort_arr(int arr[2000][3], int n);
 	int initItem(char*, int, char*);
 	int initSupplier(char*);
 	void findPlace(Batch);
 	void removeBatch(int);
+	Item findItem(char*);
 
 public:
 	Warehouse();
 	void addBatch(char*, char*, int, int, int, int, int, int, int, int, char*);
-	void takeFromWarehouse(char*, int);
+	bool takeFromWarehouse(char*, int);
 	void cleanUP(int, int, int);
 	void warehouseHistory(int, int, int, int, int, int);
 	void currentSupply();
-	//friend void sort_arr(int&);
 };
 
 #endif

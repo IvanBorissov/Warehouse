@@ -8,6 +8,34 @@
 #include "Warehouse.h"
 using namespace std;
 
+void Warehouse::sort_arr(int arr[2000][3], int n)
+{
+	int i, j;
+	for (int i = 0; i < n - 1; i++)
+	{
+		for (int j = 0; j < n - i - 1; j++)
+		{
+			int sec, shelf, batch;
+			
+			sec = arr[j][0];
+			shelf = arr[j][1];
+			batch = arr[j][2];
+			Batch a = Sections[sec].Shelves[shelf].batchList[batch];
+
+			sec = arr[j+1][0];
+			shelf = arr[j+1][1];
+			batch = arr[j+1][2];
+			Batch b = Sections[sec].Shelves[shelf].batchList[batch];
+
+			///define operator < for comparing batches by date
+			if (a > b)
+			{
+				swap(arr[j], arr[j + 1]);
+			}
+		}
+	}
+}
+
 int Warehouse::initItem(char* name, int volume, char* parameter)
 {
 	///checks if we already have an item with these parameters
@@ -155,6 +183,21 @@ void Warehouse::removeBatch(int b_ID)
 	///remove batch from its shelf
 }
 
+Item Warehouse::findItem(char* name)
+{
+	for (int i = 0; i < itemCount; i++)
+	{
+		if (strcmp(name, Items[i].getItem_name()))
+		{
+			return Items[i];
+		}
+	}
+	///item does not exist
+	char n[3] = { "No" };
+	Item a(-1, n, -1, n);
+	return a;
+}
+
 Warehouse::Warehouse()
 {
 	itemCount = batchCount = supplierCount = sectionCount = 0;
@@ -172,11 +215,17 @@ void Warehouse::addBatch(char* itemName, char* suppName, int entryDay, int entry
 	batchCount++;
 }
 
-void Warehouse::takeFromWarehouse(char* name, int quantity)
+bool Warehouse::takeFromWarehouse(char* name, int quantity)
 {
 	int possibleBatches[2000][3], count = 0, totalVolume = 0;
 	
+	///write findItem by Item name
 	Item a = findItem(name);
+	if (a.getItem_ID() == -1)
+	{
+		cout << "No such Item in the warehouse" << endl;
+		return false;
+	}
 
 	for (int i = 0; i < sectionCount; i++)
 	{
@@ -199,7 +248,9 @@ void Warehouse::takeFromWarehouse(char* name, int quantity)
 		}
 	}
 
-	sort_arr(possibleBatches);
+	///write sort function outside the class
+	///sort them by expiry date
+	sort_arr(possibleBatches, count);
 
 	if (totalVolume < quantity)
 	{
@@ -210,14 +261,20 @@ void Warehouse::takeFromWarehouse(char* name, int quantity)
 			Batch a = Sections[section].Shelves[shelf].batchList[batch];
 			cout << a << endl;
 		}
+
 		///dialog that offers entering emptying the batches of item
-		if (== "YES")
+
+		char answer[4], defaultt[4] = { "YES" };
+		cout << "Type: YES if you want to take the remaining quantity, NO if you want to abondon the " << endl;
+		cin.ignore();
+		cin >> answer;
+		if (strcmp(answer, defaultt))
 		{
 			quantity = totalVolume;
 		}
 		else
 		{
-			return;
+			return false;
 		}
 	}
 
@@ -228,7 +285,7 @@ void Warehouse::takeFromWarehouse(char* name, int quantity)
 		if (volume >= quantity)
 		{
 			Sections[section].Shelves[shelf].batchList[batch].setVolume(volume - quantity);
-			return;
+			return true;
 			///write to log file
 		}
 		else
@@ -239,7 +296,7 @@ void Warehouse::takeFromWarehouse(char* name, int quantity)
 			///remove batch from warehouse
 		}
 	}
-
+	return true;
 }
 
 void Warehouse::cleanUP(int day, int month, int year)
@@ -266,9 +323,24 @@ void Warehouse::warehouseHistory(int fromDay, int fromMonth, int fromYear, int t
 {
 	///check validity of the dates
 	///reads from log file all the changes and outputs them in the console
+	/// read every batch and find the correct asking date
 }
 
 void Warehouse::currentSupply()
 {
 	///go around the warehouse and output the batches
+	for (int i = 0; i < sectionCount; i++)
+	{
+		cout << "Section " << i << endl;
+		int nb = Sections[i].shelfCount;
+		for (int j = 0; j < nb; j++)
+		{
+			cout << "Shelf " << j << endl;
+			int nb2 = Sections[i].Shelves[j].batches;
+			for (int k = 0; k < nb2; k++)
+			{
+				cout << Sections[i].Shelves[j].batchList[k] << endl;
+			}
+		}
+	}
 }
