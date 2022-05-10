@@ -21,6 +21,12 @@ public:
 
 	void setSupplier_name(char*);
 	void setSupplier_ID(int);
+
+	void saveToFile(const char*);
+	bool operator==(const Supplier&) const;
+
+	friend std::ostream& operator<<(std::ostream& os, const Supplier& supp);
+	friend std::istream& operator>>(std::istream& is, Supplier& supp);
 };
 
 #endif

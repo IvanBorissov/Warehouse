@@ -1,5 +1,6 @@
 #include <iostream>
 #include <cstring>
+#include <fstream>
 #include "Supplier.h"
 using namespace std;
 
@@ -78,4 +79,44 @@ void Supplier::setSupplier_name(char* newName)
 void Supplier::setSupplier_ID(int newID)
 {
 	this->ID_Supplier = newID;
+}
+
+void Supplier::saveToFile(const char* fileName)
+{
+	ofstream os(fileName);
+	if (!os)
+	{
+		cout << "No such file" << endl;
+		return;
+	}
+	os << *this;
+	os.close();
+}
+
+bool Supplier::operator==(const Supplier& sup) const
+{
+	if (strcmp(this->name, sup.name) == true)return true;
+	
+	return false;
+}
+
+std::ostream& operator<<(std::ostream& os, const Supplier& supp)
+{
+	os << supp.ID_Supplier << ";" << supp.name << ";" << endl;
+	return os;
+}
+
+std::istream& operator>>(std::istream& is, Supplier& supp)
+{
+	char name[256], comma;
+	int ID;
+	
+	is >> ID;
+	is >> comma;
+	is.getline(name, 256, ';');
+
+	Supplier a(ID, name);
+	supp = a;
+
+	return is;
 }
