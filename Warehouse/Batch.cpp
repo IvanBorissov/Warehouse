@@ -330,18 +330,6 @@ void Batch::setVolume(int qnty)
 	this->totalVolume -= qnty;
 }
 
-void Batch::saveToFile(const char* fileName)
-{
-	ofstream os(fileName);
-	if (!os)
-	{
-		cout << "No such file" << endl;
-		return;
-	}
-	os << *this;
-	os.close();
-}
-
 bool Batch::operator<(const Batch& batch) const
 {
 	if (this->expiryYear < batch.expiryYear)return true;

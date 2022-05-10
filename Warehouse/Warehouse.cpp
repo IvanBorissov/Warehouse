@@ -1,5 +1,7 @@
 #include <iostream>
 #include <cstring>
+#include <fstream>
+#include <ctime>
 #include "Item.h"
 #include "Supplier.h"
 #include "Batch.h"
@@ -8,9 +10,24 @@
 #include "Warehouse.h"
 using namespace std;
 
-void Warehouse::sort_arr(int arr[2000][3], int n)
+void Warehouse::saveToLog(int iTypeOfOperation, Batch batch, char* dt)
 {
-	int i, j;
+	ofstream log;
+	log.open(logFile);
+	cout << iTypeOfOperation << ";" << batch << ";" << dt << endl;
+	log.close();
+}
+
+void Warehouse::saveToCleanUp(Batch batch)
+{
+	ofstream log;
+	log.open("cleanup - YYYY - MM - DD.txt");
+	cout << batch << endl;
+	log.close();
+}
+
+void Warehouse::sort_arr(int arr[2048][3], int n)
+{
 	for (int i = 0; i < n - 1; i++)
 	{
 		for (int j = 0; j < n - i - 1; j++)
@@ -84,13 +101,13 @@ void Warehouse::findPlace(Batch b)
 {
 	int sectionIdx=-1, shelfIdx=-1;
 	///checks it there is a place on the same shelf near the same batch
-	for (int i = 1; i < sectionCount; i++)
+	for (int i = 0; i < sectionCount; i++)
 	{
 		int nb = Sections[i].shelfCount;
-		for (int j = 1; j < nb; j++)
+		for (int j = 0; j < nb; j++)
 		{
 			int nb2 = Sections[i].Shelves[j].batches;
-			for (int k = 1; k < nb2; k++)
+			for (int k = 0; k < nb2; k++)
 			{
 				if (b == Sections[i].Shelves[j].batchList[k])
 				{
@@ -110,17 +127,17 @@ void Warehouse::findPlace(Batch b)
 	}
 
 	///There was no room for the batch on the same shelf
-	int possiblePlace[2000][2], placeCounter=0;
+	int possiblePlace[2048][2], placeCounter=0;
 	///going throgh the whole warehouse to find all the possible places for the batch
-	for (int i = 1; i < sectionCount; i++)
+	for (int i = 0; i < sectionCount; i++)
 		{
 			int nb = Sections[i].shelfCount;
-			for (int j = 1; j < nb; j++)
+			for (int j = 0; j < nb; j++)
 			{
 				int nb2 = Sections[i].Shelves[j].batches;
 				int volume = Sections[i].Shelves[j].volume;
 				bool lamp = false;
-				for (int k = 1; k < nb2; k++)
+				for (int k = 0; k < nb2; k++)
 				{
 					Batch a = Sections[i].Shelves[j].batchList[k];
 					if (b != a && b.getItem_ID() == a.getItem_ID())
@@ -145,7 +162,7 @@ void Warehouse::findPlace(Batch b)
 		return;
 	}
 	
-	int minSection=1e31-1, minShelf=1e31-1;
+	int minSection=1e30, minShelf=1e30;
 	if (sectionIdx != -1 && shelfIdx != -1)
 	{
 		
@@ -183,6 +200,11 @@ void Warehouse::removeBatch(int b_ID)
 	///remove batch from its shelf
 }
 
+bool Warehouse::checkDate(char* line, int fromDay, int fromMonth, int fromYear, int toDay, int toMonth, int toYear)
+{
+	return true;
+}
+
 Item Warehouse::findItem(char* name)
 {
 	for (int i = 0; i < itemCount; i++)
@@ -201,17 +223,28 @@ Item Warehouse::findItem(char* name)
 Warehouse::Warehouse()
 {
 	itemCount = batchCount = supplierCount = sectionCount = 0;
+	/*loadItems();
+	loadBatches();
+	loadSuppliers();
+	loadShelves();
+	loadSections();*/
 }
 
 void Warehouse::addBatch(char* itemName, char* suppName, int entryDay, int entryMonth, int entryYear, int expiryDay, int expiryMonth, int expiryYear, int volumeForOne, int quantity, char* basicParameter)
 {
 	int ID_Item, ID_Supplier;
+	
 	ID_Item = initItem(itemName, volumeForOne, basicParameter);
 	ID_Supplier = initSupplier(suppName);
-	Batch a(batchCount, ID_Item, ID_Supplier, entryDay, entryMonth, entryYear, quantity, expiryDay, expiryMonth, expiryYear, volumeForOne);
-	Batches[batchCount] = a;
-	findPlace(a);
-	///history file
+	Batch tempBatch(batchCount, ID_Item, ID_Supplier, entryDay, entryMonth, entryYear, quantity, expiryDay, expiryMonth, expiryYear, volumeForOne);
+	Batches[batchCount] = tempBatch;
+	findPlace(tempBatch);
+	
+	///timestamp of entrance
+	time_t now = time(0);
+	char* dt = ctime(&now);
+	saveToLog(0, tempBatch, dt);
+	///add date and time
 	batchCount++;
 }
 
@@ -248,7 +281,6 @@ bool Warehouse::takeFromWarehouse(char* name, int quantity)
 		}
 	}
 
-	///write sort function outside the class
 	///sort them by expiry date
 	sort_arr(possibleBatches, count);
 
@@ -285,14 +317,24 @@ bool Warehouse::takeFromWarehouse(char* name, int quantity)
 		if (volume >= quantity)
 		{
 			Sections[section].Shelves[shelf].batchList[batch].setVolume(volume - quantity);
+
+			///time stamp of exit
+			time_t now = time(0);
+			char* dt = ctime(&now);
+			saveToLog(1, Sections[section].Shelves[shelf].batchList[batch], dt);
+			///add date and time
 			return true;
-			///write to log file
 		}
 		else
 		{
 			quantity -= volume;
 			Sections[section].Shelves[shelf].batchList[batch].setVolume(0);
-			///write to log file
+
+			///time stamp of exit
+			time_t now = time(0);
+			char* dt = ctime(&now);
+			saveToLog(1, Sections[section].Shelves[shelf].batchList[batch], dt);
+			///add date and time
 			///remove batch from warehouse
 		}
 	}
@@ -303,6 +345,11 @@ void Warehouse::cleanUP(int day, int month, int year)
 {
 	///goes through all the batches and checks if something has expired with before that date
 	///gets the ID of all expired batches and removes them from the warehouse
+	
+	ofstream log;
+	char fileName[] = ("cleanup - yyyy-mm-dd.txt");
+	log.open(fileName);
+
 	for (int i = 0; i < batchCount; i++)
 	{
 		if (Batches[i].getExpiryYear() <= year)
@@ -311,12 +358,14 @@ void Warehouse::cleanUP(int day, int month, int year)
 			{
 				if (Batches[i].getExpiryDay() <= day)
 				{
+					cout << Batches[i] << endl;
 					removeBatch(Batches[i].getBatch_ID());
-					///write to file the bathes
 				}
 			}
 		}
 	}
+
+	log.close();
 }
 
 void Warehouse::warehouseHistory(int fromDay, int fromMonth, int fromYear, int toDay, int toMonth, int toYear)
@@ -324,6 +373,19 @@ void Warehouse::warehouseHistory(int fromDay, int fromMonth, int fromYear, int t
 	///check validity of the dates
 	///reads from log file all the changes and outputs them in the console
 	/// read every batch and find the correct asking date
+	ifstream log(logFile);
+
+	if (log.is_open())
+	{
+		char line[512];
+		while (log.getline(line, 512))
+		{
+			if(checkDate(line, fromDay, fromMonth, fromYear, toDay, toMonth, toYear))///function for check
+			cout << line << endl;
+		}
+	}
+
+	log.close();
 }
 
 void Warehouse::currentSupply()
@@ -343,4 +405,13 @@ void Warehouse::currentSupply()
 			}
 		}
 	}
+}
+
+Warehouse::~Warehouse()
+{
+	/*saveItems();
+	saveBatches();
+	saveSuppliers();
+	saveShelves();
+	saveSections();*/
 }

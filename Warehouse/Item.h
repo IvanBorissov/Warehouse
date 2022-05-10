@@ -30,9 +30,6 @@ public:
 
 	bool operator==(const Item&) const;
 
-	void saveToFile(const char*);
-	void readFromFile(char*);
-
 	friend std::ostream& operator<<(std::ostream& os, const Item& item);
 	friend std::istream& operator>>(std::istream& is, Item& item);
 };

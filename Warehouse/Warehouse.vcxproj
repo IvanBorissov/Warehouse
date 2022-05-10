@@ -151,6 +151,7 @@
     <ClCompile Include="BatchMain.cpp" />
     <ClCompile Include="Item.cpp" />
     <ClCompile Include="ItemMain.cpp" />
+    <ClCompile Include="Main.cpp" />
     <ClCompile Include="Supplier.cpp" />
     <ClCompile Include="SupplierMain.cpp" />
     <ClCompile Include="Warehouse.cpp" />

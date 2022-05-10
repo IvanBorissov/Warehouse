@@ -38,7 +38,6 @@ public:
 	int getExpiryYear();
 
 	void setVolume(int);
-	void saveToFile(const char*);
 
 	bool operator<(const Batch&) const;
 	bool operator>(const Batch&) const;

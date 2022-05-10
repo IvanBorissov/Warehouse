@@ -81,21 +81,9 @@ void Supplier::setSupplier_ID(int newID)
 	this->ID_Supplier = newID;
 }
 
-void Supplier::saveToFile(const char* fileName)
-{
-	ofstream os(fileName);
-	if (!os)
-	{
-		cout << "No such file" << endl;
-		return;
-	}
-	os << *this;
-	os.close();
-}
-
 bool Supplier::operator==(const Supplier& sup) const
 {
-	if (strcmp(this->name, sup.name) == true)return true;
+	if (strcmp(this->name, sup.name))return true;
 	
 	return false;
 }

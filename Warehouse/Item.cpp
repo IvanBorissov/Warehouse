@@ -129,22 +129,6 @@ bool Item::operator==(const Item& item) const
 	return false;
 }
 
-void Item::saveToFile(const char* fileName)
-{
-	ofstream os(fileName);
-	if (!os)
-	{
-		cout << "No such file" << endl;
-		return;
-	}
-	os << *this;
-	os.close();
-}
-
-void Item::readFromFile(char*)
-{
-}
-
 ostream& operator<<(ostream& os, const Item& item)
 {
 	os << item.ID_Item << ";" << item.name << ";" << item.volumeForOne << ";" << item.basicParameter << ";" << endl;
