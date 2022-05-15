@@ -11,7 +11,7 @@
 #pragma warning(disable : 4996) //_CRT_SECURE_NO_WARNINGS
 using namespace std;
 
-void Warehouse::saveToLog(int iTypeOfOperation, Batch batch, char* dt)
+void Warehouse::saveToLog(int iTypeOfOperation, long long timer, Batch batch, char* dt)
 {
 	/*ofstream log;
 	log.open(logFile);
@@ -24,7 +24,7 @@ void Warehouse::saveToLog(int iTypeOfOperation, Batch batch, char* dt)
 		cout << "File not open!" << endl;
 		return;
 	}
-	os << iTypeOfOperation << ";" << batch << dt << endl;
+	os << timer << ";" << iTypeOfOperation << ";" << batch << dt;
 	os.close();
 }
 
@@ -255,8 +255,24 @@ void Warehouse::updateWarehouse(int section, int shelf, int batch, int newQty)
 	
 	int newVolume = tempItem.getItem_volume() * newQty;
 	cout << newVolume << " newVolume" << endl;
+
+	Batch logBatch = Sections[section].Shelves[shelf].batchList[batch];
+	int logQty = logBatch.getQuantity() - newQty;
+	int logVolume = logQty * tempItem.getItem_volume();
+
+	logBatch.setQuantity(logQty);
+	logBatch.setVolume(logVolume);
+
+	time_t timer;
+	time(&timer);
+	char* dt = ctime(&timer);
+
+	saveToLog(1, timer, logBatch, dt);
+
 	Sections[section].Shelves[shelf].batchList[batch].setQuantity(newQty);
 	Sections[section].Shelves[shelf].batchList[batch].setVolume(newVolume);
+
+
 	Sections[section].Shelves[shelf].volume += prevVolume - newVolume;
 
 	cout << Sections[section].Shelves[shelf].batchList[batch].getVolume() << " new volume of the batch" << endl;
@@ -269,9 +285,22 @@ void Warehouse::updateWarehouse(int section, int shelf, int batch, int newQty)
 
 }
 
-bool Warehouse::checkDate(char* line, int fromDay, int fromMonth, int fromYear, int toDay, int toMonth, int toYear)
+bool Warehouse::checkDate(char* date, long long fromDate, long long toDate)
 {
-	return true;
+	int sz = strlen(date);
+	long long num=0;
+	char comma;
+
+	sz--;
+	while (sz >= 0)
+	{
+		num = num * 10 + int(date[sz] - '0');
+	}
+	
+	if (fromDate <= num)
+	{
+		return true;
+	}
 }
 
 Item Warehouse::getItemBy_ID(int ID)
@@ -320,37 +349,20 @@ Warehouse::Warehouse()
 	loadSections();*/
 }
 
-void Warehouse::addBatch(char* itemName, char* suppName, int entryDay, int entryMonth, int entryYear, int expiryDay, int expiryMonth, int expiryYear, int volumeForOne, int quantity, char* basicParameter)
+void Warehouse::addBatch(char* itemName, char* suppName,int entryDay, int entryMonth, int entryYear, int expiryDay, int expiryMonth, int expiryYear, int volumeForOne, int quantity, char* basicParameter)
 {
 	int ID_Item, ID_Supplier;
 	
 	///finding ID of the Item and supplier, or assigning new ones
 	ID_Item = initItem(itemName, volumeForOne, basicParameter);
 	ID_Supplier = initSupplier(suppName);
+
+	char buff[20];
+	time_t timer;
+	time(&timer);
+	strftime(buff, 20, "%Y-%m-%d", localtime(&timer));
+	///write timer
 	Batch tempBatch(newIDBatch, ID_Item, ID_Supplier, entryDay, entryMonth, entryYear, quantity, expiryDay, expiryMonth, expiryYear, volumeForOne);
-
-	///there could be an empty place in the batches array marked with Batch_ID = 0
-	///We update batchCount to find where the last batch is in the array marked with Batch_ID = -1
-	/// meanwhile we search for empty slot in between the batches
-	/*int i = 0, place = 0;
-	bool lamp = false;
-	while (Batches[i].getBatch_ID() != -1)
-	{
-		if (Batches[i].getBatch_ID() == 0 && lamp==false)
-		{
-			place = i;
-			lamp = true;
-		}
-		i++;
-	}
-
-	if (lamp == false)
-	{
-		place = i;
-		i++;
-		///there might not be an empty slot, so the first free place is the first place with Batch_ID = -1
-	}
-	*/
 	
 	Batches[batchCount] = tempBatch;
 	newIDBatch++;
@@ -362,10 +374,12 @@ void Warehouse::addBatch(char* itemName, char* suppName, int entryDay, int entry
 	if (findPlace(tempBatch))
 	{
 		///timestamp of entrance
-		time_t now = time(0);
-		char* dt = ctime(&now);
+		time_t timer;
+		time(&timer);
+		//time_t now = time(0);
+		char* dt = ctime(&timer);
 		cout << "pishem nova partida" << endl;
-		saveToLog(0, tempBatch, dt);
+		saveToLog(0, timer, tempBatch, dt);
 	}
 }
 
@@ -450,7 +464,7 @@ bool Warehouse::takeFromWarehouse(char* name, int quantity)
 		if (currQuantity >= quantity)
 		{
 			int newQty = currQuantity - quantity;
-			
+
 			updateWarehouse(section, shelf, batch, newQty);
 			
 			cout << "promenihme broikata" << endl;
@@ -458,7 +472,7 @@ bool Warehouse::takeFromWarehouse(char* name, int quantity)
 			time_t now = time(0);
 			char* dt = ctime(&now);
 			cout << "vzehme vremeto" << endl;
-			saveToLog(1, Sections[section].Shelves[shelf].batchList[batch], dt);
+			//saveToLog(1, Sections[section].Shelves[shelf].batchList[batch], dt);
 			cout << "zapazihme vyv file" << endl;
 			return true;
 		}
@@ -471,7 +485,7 @@ bool Warehouse::takeFromWarehouse(char* name, int quantity)
 			///time stamp of exit
 			time_t now = time(0);
 			char* dt = ctime(&now);
-			saveToLog(1, Sections[section].Shelves[shelf].batchList[batch], dt);
+			//saveToLog(1, Sections[section].Shelves[shelf].batchList[batch], dt);
 			cout << "zapazvame batcha" << endl;
 		}
 	}
@@ -525,6 +539,20 @@ void Warehouse::warehouseHistory(int fromDay, int fromMonth, int fromYear, int t
 	///check validity of the dates
 	///reads from log file all the changes and outputs them in the console
 	/// read every batch and find the correct asking date
+	struct tm tm;
+
+	tm.tm_year = fromYear - 1900;
+	tm.tm_mon = fromMonth - 1;
+	tm.tm_mday = fromDay;
+
+	long long fromDate = mktime(&tm);
+
+	tm.tm_year = toYear - 1900;
+	tm.tm_mon = toMonth - 1;
+	tm.tm_mday = toDay;
+
+	long long toDate = mktime(&tm);
+
 	ifstream log(logFile);
 
 	if (log.is_open())
@@ -532,7 +560,17 @@ void Warehouse::warehouseHistory(int fromDay, int fromMonth, int fromYear, int t
 		char line[512];
 		while (log.getline(line, 512))
 		{
-			if(checkDate(line, fromDay, fromMonth, fromYear, toDay, toMonth, toYear))///function for check
+			char date[64];
+			int i = 0;
+			while (line[i] != ';')
+			{
+				date[i] = line[i];
+				i++;
+			}
+			date[i] = '\0';
+
+			if(checkDate(date, fromDate, toDate))///function for check
+
 			cout << line << endl;
 		}
 	}

@@ -141,6 +141,7 @@ void loadWarehouse(Warehouse& warehouse)
 void warehouseInterface(Warehouse& warehouse)
 {
 	int command;
+	ofstream("log.txt", ios::trunc);
 	do
 	{
 		printMenu();

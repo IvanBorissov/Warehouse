@@ -23,7 +23,7 @@ private:
 				suppliersFile[14]  =  "suppliers.txt" , 
 				shelvesFile[12]    =  "shelves.txt" ,
 				sectionsFile[13]   =  "sections.txt" ,
-				logFile[8]     =  "log.txt";
+				logFile[8]          =  "log.txt";
 
 	/*void loadItems();
 	void loadBatches();
@@ -36,7 +36,7 @@ private:
 	void saveSuppliers();
 	void saveShelves();
 	void saveSections();*/
-	void saveToLog(int iTypeOfOperation /* 0 - IN; 1 - OUT*/, Batch, char*);
+	void saveToLog(int iTypeOfOperation, long long, Batch, char*);
 	void saveToCleanUp(Batch);
 
 	void sort_arr(int arr[2048][3], int n);
@@ -44,7 +44,7 @@ private:
 	int initSupplier(char*);
 	bool findPlace(Batch);
 	void updateWarehouse(int, int, int, int);
-	bool checkDate(char*, int fromDay, int fromMonth, int fromYear, int toDay, int toMonth, int toYear);
+	bool checkDate(char*, long long, long long);
 	Item getItemBy_ID(int);
 	Item findItem(char*);
 
