@@ -5,7 +5,7 @@
 
 struct Section
 {
-	int ID_Section,shelfCount=1;
+	int ID_Section,shelfCount=4;
 	Shelf Shelves[4];
 };
 

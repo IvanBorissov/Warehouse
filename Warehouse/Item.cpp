@@ -122,8 +122,8 @@ void Item::setItem_parameter(char* newParameter)
 
 bool Item::operator==(const Item& item) const
 {
-	if (strcmp(this->name, item.name) == true
-		&& strcmp(this->basicParameter, item.basicParameter) == true
+	if (strcmp(this->name, item.name) == 0
+		&& strcmp(this->basicParameter, item.basicParameter) == 0
 		&& this->volumeForOne == item.volumeForOne) return true;
 
 	return false;

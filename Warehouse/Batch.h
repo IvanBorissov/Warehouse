@@ -38,6 +38,8 @@ public:
 	int getExpiryYear();
 
 	void setVolume(int);
+	void setBatch_ID(int);
+	void setQuantity(int);
 
 	bool operator<(const Batch&) const;
 	bool operator>(const Batch&) const;

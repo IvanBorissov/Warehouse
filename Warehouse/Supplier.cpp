@@ -83,7 +83,7 @@ void Supplier::setSupplier_ID(int newID)
 
 bool Supplier::operator==(const Supplier& sup) const
 {
-	if (strcmp(this->name, sup.name))return true;
+	if (strcmp(this->name, sup.name)==0)return true;
 	
 	return false;
 }

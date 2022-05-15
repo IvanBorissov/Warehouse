@@ -242,6 +242,9 @@ Batch::Batch()
 	this->ID_Supplier = -1;
 	this->quantity = -1;
 	this->totalVolume = -1;
+	this->entryDay = this->entryMonth = this->entryYear = -1;
+	this->expiryDay = this->expiryMonth = this->expiryYear = -1;
+
 }
 
 Batch::Batch(int ID_b, int ID_i, int ID_s, char* expiry, int quantity, int totalVolume, char* entry)
@@ -325,9 +328,19 @@ int Batch::getExpiryYear()
 	return this->expiryYear;
 }
 
-void Batch::setVolume(int qnty)
+void Batch::setVolume(int newVolume)
 {
-	this->totalVolume -= qnty;
+	this->totalVolume = newVolume;
+}
+
+void Batch::setBatch_ID(int a)
+{
+	this->ID_Batch = a;
+}
+
+void Batch::setQuantity(int newQty)
+{
+	this->quantity = newQty;
 }
 
 bool Batch::operator<(const Batch& batch) const
@@ -359,7 +372,7 @@ bool Batch::operator!=(const Batch& batch) const
 
 std::ostream& operator<<(std::ostream& os, const Batch& batch)
 {
-	os << batch.ID_Batch << ";" << batch.ID_Item << ";" << batch.ID_Supplier << ";" << batch.dateOfExpiry << ";" << batch.quantity << ";" << batch.totalVolume << ";" << batch.dateOfEntry << ";" << endl;
+	os << batch.ID_Batch << ";" << batch.ID_Item << ";" << batch.ID_Supplier << ";" << batch.dateOfExpiry << ";" << batch.quantity << ";" << batch.totalVolume << ";" << batch.dateOfEntry << ";";
 	return os;
 }
 

@@ -15,13 +15,14 @@ private:
 	Item Items[2048];
 	Batch Batches[2048];
 	Supplier Suppliers[2048];
-	int itemCount, batchCount, supplierCount, sectionCount;
+	int itemCount, batchCount, supplierCount, sectionCount=4;
+	int newIDBatch;
 
-	const char	items[10]      =  "items.txt",
-				batches[12]    =  "batches.txt" ,
-				suppliers[14]  =  "suppliers.txt" , 
-				shelves[12]    =  "shelves.txt" ,
-				sections[13]   =  "sections.txt" ,
+	const char	itemsFile[10]      =  "items.txt",
+				batchesFile[12]    =  "batches.txt" ,
+				suppliersFile[14]  =  "suppliers.txt" , 
+				shelvesFile[12]    =  "shelves.txt" ,
+				sectionsFile[13]   =  "sections.txt" ,
 				logFile[8]     =  "log.txt";
 
 	/*void loadItems();
@@ -41,9 +42,10 @@ private:
 	void sort_arr(int arr[2048][3], int n);
 	int initItem(char*, int, char*);
 	int initSupplier(char*);
-	void findPlace(Batch);
-	void removeBatch(int);
+	bool findPlace(Batch);
+	void updateWarehouse(int, int, int, int);
 	bool checkDate(char*, int fromDay, int fromMonth, int fromYear, int toDay, int toMonth, int toYear);
+	Item getItemBy_ID(int);
 	Item findItem(char*);
 
 public:

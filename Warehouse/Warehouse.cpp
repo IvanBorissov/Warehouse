@@ -8,22 +8,36 @@
 #include "Shelf.h"
 #include "Section.h"
 #include "Warehouse.h"
+#pragma warning(disable : 4996) //_CRT_SECURE_NO_WARNINGS
 using namespace std;
 
 void Warehouse::saveToLog(int iTypeOfOperation, Batch batch, char* dt)
 {
-	ofstream log;
+	/*ofstream log;
 	log.open(logFile);
-	cout << iTypeOfOperation << ";" << batch << ";" << dt << endl;
+	cout << iTypeOfOperation << ";" << batch << dt << endl;
 	log.close();
+	*/
+	ofstream os(logFile, ios::app);
+	if (!os)
+	{
+		cout << "File not open!" << endl;
+		return;
+	}
+	os << iTypeOfOperation << ";" << batch << dt << endl;
+	os.close();
 }
 
 void Warehouse::saveToCleanUp(Batch batch)
 {
-	ofstream log;
-	log.open("cleanup - YYYY - MM - DD.txt");
-	cout << batch << endl;
-	log.close();
+	ofstream os("cleanup - YYYY - MM - DD.txt");
+	if (!os)
+	{
+		cout << "File not open!" << endl;
+		return;
+	}
+	os << batch << endl;
+	os.close();
 }
 
 void Warehouse::sort_arr(int arr[2048][3], int n)
@@ -47,7 +61,9 @@ void Warehouse::sort_arr(int arr[2048][3], int n)
 			///define operator < for comparing batches by date
 			if (a > b)
 			{
+				cout << "minava operaciqta" << endl;
 				swap(arr[j], arr[j + 1]);
+				cout << "i swapa mina" << endl;
 			}
 		}
 	}
@@ -61,7 +77,6 @@ int Warehouse::initItem(char* name, int volume, char* parameter)
 	Item a(-1, name, volume, parameter);
 	for (int i = 0; i < itemCount; i++)
 	{
-		///define operator == in item
 		if (a == Items[i])
 		{
 			return Items[i].getItem_ID();
@@ -83,7 +98,6 @@ int Warehouse::initSupplier(char* name)
 	Supplier a(-1, name);
 	for (int i = 0; i < supplierCount; i++)
 	{
-		///define operator == for Class Supplier
 		if (a == Suppliers[i])
 		{
 			return Suppliers[i].getSupplier_ID();
@@ -97,8 +111,9 @@ int Warehouse::initSupplier(char* name)
 	return a.getSupplier_ID();
 }
 
-void Warehouse::findPlace(Batch b)
+bool Warehouse::findPlace(Batch b)
 {
+	cout << "pyrvi for" << endl;
 	int sectionIdx=-1, shelfIdx=-1;
 	///checks it there is a place on the same shelf near the same batch
 	for (int i = 0; i < sectionCount; i++)
@@ -109,7 +124,8 @@ void Warehouse::findPlace(Batch b)
 			int nb2 = Sections[i].Shelves[j].batches;
 			for (int k = 0; k < nb2; k++)
 			{
-				if (b == Sections[i].Shelves[j].batchList[k])
+				Batch tempBatch = Sections[i].Shelves[j].batchList[k];
+				if (b == tempBatch && b.getItem_ID() == tempBatch.getItem_ID())///???????? why batch ID
 				{
 					sectionIdx = i; shelfIdx = j;
 					if (Sections[i].Shelves[j].volume - b.getVolume() >= 0)
@@ -117,8 +133,9 @@ void Warehouse::findPlace(Batch b)
 						int count = Sections[i].Shelves[j].batches++;
 						Sections[i].Shelves[j].batchList[count] = b;
 						Sections[i].Shelves[j].volume -= b.getVolume();
-						///write to log file
-						return;
+						cout << "found batch with the same expiration date" << endl;
+						cout << "new batch in Section:" << i << " Shelf:" << j << " num of batch:" << count << endl;
+						return true;
 					}
 				}
 			}
@@ -126,14 +143,17 @@ void Warehouse::findPlace(Batch b)
 		}
 	}
 
+	cout << "vtori for" << endl;
 	///There was no room for the batch on the same shelf
 	int possiblePlace[2048][2], placeCounter=0;
 	///going throgh the whole warehouse to find all the possible places for the batch
 	for (int i = 0; i < sectionCount; i++)
 		{
+			//cout << "imame sekcii" << endl;
 			int nb = Sections[i].shelfCount;
 			for (int j = 0; j < nb; j++)
 			{
+				//cout << "Imame raftove" << endl;
 				int nb2 = Sections[i].Shelves[j].batches;
 				int volume = Sections[i].Shelves[j].volume;
 				bool lamp = false;
@@ -142,12 +162,23 @@ void Warehouse::findPlace(Batch b)
 					Batch a = Sections[i].Shelves[j].batchList[k];
 					if (b != a && b.getItem_ID() == a.getItem_ID())
 					{
+						///we have the same item in the batch but with different expiration date
+						///so that shelf is not valid for us to put our new batch
+						///thus we no longer need to check the other items on the shelf
+						cout << "lelele" << endl;
 						lamp = true;
 						break;
 					}
 				}
+
+				//cout << lamp << "lamp" << volume << " shelf volume " << b.getVolume()<< " batch volume" << endl;
 				if (lamp == false && volume - b.getVolume() >= 0)
 				{
+					///we didn't see a batch with the same item but different expiration date
+					///there's place on the shelf
+					///we save the place in the array, so we can check with possible place meets the criteria best
+					cout << i << " Possibe Section and shelf " << j << endl;
+					cout << volume << " " << b.getVolume() << endl;
 					possiblePlace[placeCounter][0] = i;
 					possiblePlace[placeCounter][1] = j;
 					placeCounter++;
@@ -156,48 +187,86 @@ void Warehouse::findPlace(Batch b)
 			}
 		}
 
+	cout << "oha qkata rabota" << endl;
 	if (placeCounter == 0)
 	{
+		///we didn't find a suitable place
+		///that means that the warehouse is full and can't add that item
 		cout << "No place for the current Batch. Warehouse full" << endl;
-		return;
+		return false;
 	}
 	
-	int minSection=1e30, minShelf=1e30;
+	int minSection = 150000, minShelf = 150000;
 	if (sectionIdx != -1 && shelfIdx != -1)
 	{
-		
+		///we've found a similiar Batch, so now we need to find the closest place
+		///first by section, then by shelf
+		cout << sectionIdx << " The place we need to be closest to " << shelfIdx << endl;
 		for (int i = 0; i < placeCounter; i++)
 		{
+			cout << "Section" << possiblePlace[i][0] << " Shelf" << possiblePlace[i][1] << endl;
+		}
+		for (int i = 0; i < placeCounter; i++)
+		{
+			cout << minSection << " " << sectionIdx << " " << possiblePlace[i][0] << " " << possiblePlace[i][1] << endl;
 			if (abs(minSection - sectionIdx) > abs(possiblePlace[i][0] - sectionIdx))
 			{
+				cout << "tuk koga vlizame 1? "<<i<<" " << minSection << " " << minShelf << " " << possiblePlace[i][0] << possiblePlace[i][1] << endl;
 				minSection = possiblePlace[i][0];
 				minShelf = possiblePlace[i][1];
 			}
 			if (abs(minSection - sectionIdx) == abs(possiblePlace[i][0] - sectionIdx)
 				&& abs(minShelf - shelfIdx) > abs(possiblePlace[i][1] - sectionIdx))
 			{
+				cout << "tuk koga vlizame 2? "<<i<<" " << minSection << " " << minShelf << " " << possiblePlace[i][0] << possiblePlace[i][1] << endl;
+				minSection = possiblePlace[i][0];
 				minShelf = possiblePlace[i][1];
 			}
 		}
 	}
 	else
 	{
+		///there's now similiar batch in the warehouse
 		///no limitations first possible place
 		minSection = possiblePlace[0][0];
 		minShelf = possiblePlace[0][1];
 	}
 
+	///adding batch to the warehouse in minSection, minShelf position
 	int cnt = Sections[minSection].Shelves[minShelf].batches++;
 	Sections[minSection].Shelves[minShelf].batchList[cnt] = b;
+	cout << Sections[minSection].Shelves[minShelf].volume << " volume of shelf and new item " << b.getVolume() << endl;
 	Sections[minSection].Shelves[minShelf].volume -= b.getVolume();
-	///write to log file
+	cout << "new batch is in Section:" << minSection << " Shelf:" << minShelf << " num of batch:" << cnt << endl;
+
+	return true;
 }
 
-void Warehouse::removeBatch(int b_ID)
+void Warehouse::updateWarehouse(int section, int shelf, int batch, int newQty)
 {
-	///separate ID of the batches from their count
-	///set default values for the batch
-	///remove batch from its shelf
+	///find batch on the shelf
+	char defaultt[5] = { "null" };
+
+	int tempID = Sections[section].Shelves[shelf].batchList[batch].getItem_ID();
+	int prevVolume = Sections[section].Shelves[shelf].batchList[batch].getVolume();
+	Item  tempItem = getItemBy_ID(tempID);
+
+	cout << tempItem << endl;
+	
+	int newVolume = tempItem.getItem_volume() * newQty;
+	cout << newVolume << " newVolume" << endl;
+	Sections[section].Shelves[shelf].batchList[batch].setQuantity(newQty);
+	Sections[section].Shelves[shelf].batchList[batch].setVolume(newVolume);
+	Sections[section].Shelves[shelf].volume += prevVolume - newVolume;
+
+	cout << Sections[section].Shelves[shelf].batchList[batch].getVolume() << " new volume of the batch" << endl;
+
+	if (Sections[section].Shelves[shelf].batchList[batch].getVolume() == 0)
+	{
+		Batch defaultBatch(-1, -1, -1, defaultt, -1, -1, defaultt);
+		Sections[section].Shelves[shelf].batchList[batch] = defaultBatch;
+	}
+
 }
 
 bool Warehouse::checkDate(char* line, int fromDay, int fromMonth, int fromYear, int toDay, int toMonth, int toYear)
@@ -205,11 +274,25 @@ bool Warehouse::checkDate(char* line, int fromDay, int fromMonth, int fromYear, 
 	return true;
 }
 
+Item Warehouse::getItemBy_ID(int ID)
+{
+	char defaultt[5] = { "null" };
+	for (int i = 0; i < itemCount; i++)
+	{
+		if (Items[i].getItem_ID() == ID)
+		{
+			return Items[i];
+		}
+	}
+	return Item(-1,defaultt, -1, defaultt);
+}
+
 Item Warehouse::findItem(char* name)
 {
 	for (int i = 0; i < itemCount; i++)
 	{
-		if (strcmp(name, Items[i].getItem_name()))
+		//cout << name << " " << Items[i].getItem_name() << endl;
+		if (strcmp(name, Items[i].getItem_name())==0)
 		{
 			return Items[i];
 		}
@@ -222,7 +305,14 @@ Item Warehouse::findItem(char* name)
 
 Warehouse::Warehouse()
 {
-	itemCount = batchCount = supplierCount = sectionCount = 0;
+	itemCount = batchCount = supplierCount = 0;
+	newIDBatch = 1;
+	for (int i = 0; i < 2048; i++)
+	{
+		Batches[i].setBatch_ID(-1);		
+	}
+	///-1 means that there are no batches any further
+
 	/*loadItems();
 	loadBatches();
 	loadSuppliers();
@@ -234,25 +324,55 @@ void Warehouse::addBatch(char* itemName, char* suppName, int entryDay, int entry
 {
 	int ID_Item, ID_Supplier;
 	
+	///finding ID of the Item and supplier, or assigning new ones
 	ID_Item = initItem(itemName, volumeForOne, basicParameter);
 	ID_Supplier = initSupplier(suppName);
-	Batch tempBatch(batchCount, ID_Item, ID_Supplier, entryDay, entryMonth, entryYear, quantity, expiryDay, expiryMonth, expiryYear, volumeForOne);
-	Batches[batchCount] = tempBatch;
-	findPlace(tempBatch);
+	Batch tempBatch(newIDBatch, ID_Item, ID_Supplier, entryDay, entryMonth, entryYear, quantity, expiryDay, expiryMonth, expiryYear, volumeForOne);
+
+	///there could be an empty place in the batches array marked with Batch_ID = 0
+	///We update batchCount to find where the last batch is in the array marked with Batch_ID = -1
+	/// meanwhile we search for empty slot in between the batches
+	/*int i = 0, place = 0;
+	bool lamp = false;
+	while (Batches[i].getBatch_ID() != -1)
+	{
+		if (Batches[i].getBatch_ID() == 0 && lamp==false)
+		{
+			place = i;
+			lamp = true;
+		}
+		i++;
+	}
+
+	if (lamp == false)
+	{
+		place = i;
+		i++;
+		///there might not be an empty slot, so the first free place is the first place with Batch_ID = -1
+	}
+	*/
 	
-	///timestamp of entrance
-	time_t now = time(0);
-	char* dt = ctime(&now);
-	saveToLog(0, tempBatch, dt);
-	///add date and time
+	Batches[batchCount] = tempBatch;
+	newIDBatch++;
 	batchCount++;
+
+	cout << itemName << " " << suppName << " " << basicParameter << endl;
+	cout << tempBatch << endl;
+
+	if (findPlace(tempBatch))
+	{
+		///timestamp of entrance
+		time_t now = time(0);
+		char* dt = ctime(&now);
+		cout << "pishem nova partida" << endl;
+		saveToLog(0, tempBatch, dt);
+	}
 }
 
 bool Warehouse::takeFromWarehouse(char* name, int quantity)
 {
-	int possibleBatches[2000][3], count = 0, totalVolume = 0;
+	int possibleBatches[2000][3], count = 0, sumOfQuantities = 0;
 	
-	///write findItem by Item name
 	Item a = findItem(name);
 	if (a.getItem_ID() == -1)
 	{
@@ -274,19 +394,30 @@ bool Warehouse::takeFromWarehouse(char* name, int quantity)
 					possibleBatches[count][0] = i;
 					possibleBatches[count][1] = j;
 					possibleBatches[count][2] = k;
-					totalVolume += temp.getVolume();
+					sumOfQuantities += temp.getQuantity();
 					count++;
 				}
 			}
 		}
 	}
+	cout << "imame partidi" << endl;
 
 	///sort them by expiry date
 	sort_arr(possibleBatches, count);
 
-	if (totalVolume < quantity)
+	/*
+	for (int i = 0; i < count; i++)
 	{
-		cout << "Total Volume of all batches is less than requested: " << totalVolume << endl;
+		int section = possibleBatches[i][0], shelf = possibleBatches[i][1], batch = possibleBatches[i][2];
+		Batch a = Sections[section].Shelves[shelf].batchList[batch];
+		cout << a << endl;
+	}
+	*/
+	cout << "imame sortirani partidi" << endl;
+
+	if (sumOfQuantities < quantity)
+	{
+		cout << "Total Quantity of all batches is less than requested: " << sumOfQuantities << endl;
 		for (int i = 0; i < count; i++)
 		{
 			int section = possibleBatches[i][0], shelf = possibleBatches[i][1], batch = possibleBatches[i][2];
@@ -297,12 +428,11 @@ bool Warehouse::takeFromWarehouse(char* name, int quantity)
 		///dialog that offers entering emptying the batches of item
 
 		char answer[4], defaultt[4] = { "YES" };
-		cout << "Type: YES if you want to take the remaining quantity, NO if you want to abondon the " << endl;
-		cin.ignore();
+		cout << "Type: YES if you want to take the remaining quantity, NO if you want to abondon the operation" << endl;
 		cin >> answer;
-		if (strcmp(answer, defaultt))
+		if (strcmp(answer, defaultt)==0)
 		{
-			quantity = totalVolume;
+			quantity = sumOfQuantities;
 		}
 		else
 		{
@@ -312,30 +442,37 @@ bool Warehouse::takeFromWarehouse(char* name, int quantity)
 
 	for (int i = 0; i < count; i++)
 	{
+		cout << "ehoooo" << endl;
 		int section = possibleBatches[i][0], shelf = possibleBatches[i][1], batch = possibleBatches[i][2];
-		int volume = Sections[section].Shelves[shelf].batchList[batch].getVolume();
-		if (volume >= quantity)
+		int currQuantity = Sections[section].Shelves[shelf].batchList[batch].getQuantity();
+		int currVolume = Sections[section].Shelves[shelf].batchList[batch].getVolume();
+		cout << Sections[section].Shelves[shelf].batchList[batch] << "ni e partidata " << quantity << " ni e broikata" << endl;
+		if (currQuantity >= quantity)
 		{
-			Sections[section].Shelves[shelf].batchList[batch].setVolume(volume - quantity);
-
+			int newQty = currQuantity - quantity;
+			
+			updateWarehouse(section, shelf, batch, newQty);
+			
+			cout << "promenihme broikata" << endl;
 			///time stamp of exit
 			time_t now = time(0);
 			char* dt = ctime(&now);
+			cout << "vzehme vremeto" << endl;
 			saveToLog(1, Sections[section].Shelves[shelf].batchList[batch], dt);
-			///add date and time
+			cout << "zapazihme vyv file" << endl;
 			return true;
 		}
 		else
 		{
-			quantity -= volume;
-			Sections[section].Shelves[shelf].batchList[batch].setVolume(0);
+			cout << "mahame tazi partida" << endl;
+			quantity -= currQuantity;
+			updateWarehouse(section, shelf, batch, 0);
 
 			///time stamp of exit
 			time_t now = time(0);
 			char* dt = ctime(&now);
 			saveToLog(1, Sections[section].Shelves[shelf].batchList[batch], dt);
-			///add date and time
-			///remove batch from warehouse
+			cout << "zapazvame batcha" << endl;
 		}
 	}
 	return true;
@@ -346,26 +483,41 @@ void Warehouse::cleanUP(int day, int month, int year)
 	///goes through all the batches and checks if something has expired with before that date
 	///gets the ID of all expired batches and removes them from the warehouse
 	
-	ofstream log;
+	///write the correct file name
 	char fileName[] = ("cleanup - yyyy-mm-dd.txt");
-	log.open(fileName);
-
-	for (int i = 0; i < batchCount; i++)
+	ofstream os(fileName);
+	//log.open(fileName);
+	if (!os)
 	{
-		if (Batches[i].getExpiryYear() <= year)
-		{
-			if (Batches[i].getExpiryMonth() <= month)
-			{
-				if (Batches[i].getExpiryDay() <= day)
-				{
-					cout << Batches[i] << endl;
-					removeBatch(Batches[i].getBatch_ID());
-				}
-			}
-		}
+		cout << "File problem" << endl;
+		return;
 	}
 
-	log.close();
+	for (int i = 0; i < sectionCount; i++)
+	{
+		int nb = Sections[i].shelfCount;
+		for (int j = 0; j < nb; j++)
+		{
+			int nb2 = Sections[i].Shelves[j].batches;
+			for (int k = 0; k < nb2; k++)
+			{
+				Batch tempBatch = Sections[i].Shelves[j].batchList[k];
+				if (tempBatch.getExpiryYear() <= year)
+				{
+					if (tempBatch.getExpiryMonth() <= month)
+					{
+						if (tempBatch.getExpiryDay() <= day)
+						{
+							os << tempBatch << endl;
+							updateWarehouse(i, j ,k ,0);
+						}
+					}
+				}
+			}
+
+		}
+	}
+	os.close();
 }
 
 void Warehouse::warehouseHistory(int fromDay, int fromMonth, int fromYear, int toDay, int toMonth, int toYear)
