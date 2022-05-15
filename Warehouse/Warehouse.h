@@ -37,7 +37,6 @@ private:
 	void saveShelves();
 	void saveSections();*/
 	void saveToLog(int iTypeOfOperation, long long, Batch, char*);
-	void saveToCleanUp(Batch);
 
 	void sort_arr(int arr[2048][3], int n);
 	int initItem(char*, int, char*);

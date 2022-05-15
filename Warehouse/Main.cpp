@@ -146,7 +146,7 @@ void warehouseInterface(Warehouse& warehouse)
 	{
 		printMenu();
 		cin >> command;
-		if (command < 0 || command>7)
+		if (command < 0 || command>6)
 		{
 			cout << "Incorrect number!" << endl;
 			cout << "Enter a number between 0 and 6" << endl;
@@ -172,7 +172,7 @@ void warehouseInterface(Warehouse& warehouse)
 		{
 			cleanWarehouse(warehouse);
 		}
-		if (command == 6)
+		/*if (command == 6)
 		{
 			saveWarehouse(warehouse);
 		}
@@ -180,6 +180,7 @@ void warehouseInterface(Warehouse& warehouse)
 		{
 			loadWarehouse(warehouse);
 		}
+		*/
 
 	} while (command != 0);
 }

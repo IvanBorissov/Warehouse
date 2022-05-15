@@ -28,18 +28,6 @@ void Warehouse::saveToLog(int iTypeOfOperation, long long timer, Batch batch, ch
 	os.close();
 }
 
-void Warehouse::saveToCleanUp(Batch batch)
-{
-	ofstream os("cleanup - YYYY - MM - DD.txt");
-	if (!os)
-	{
-		cout << "File not open!" << endl;
-		return;
-	}
-	os << batch << endl;
-	os.close();
-}
-
 void Warehouse::sort_arr(int arr[2048][3], int n)
 {
 	for (int i = 0; i < n - 1; i++)
@@ -61,9 +49,9 @@ void Warehouse::sort_arr(int arr[2048][3], int n)
 			///define operator < for comparing batches by date
 			if (a > b)
 			{
-				cout << "minava operaciqta" << endl;
+				//cout << "minava operaciqta" << endl;
 				swap(arr[j], arr[j + 1]);
-				cout << "i swapa mina" << endl;
+				//cout << "i swapa mina" << endl;
 			}
 		}
 	}
@@ -113,7 +101,7 @@ int Warehouse::initSupplier(char* name)
 
 bool Warehouse::findPlace(Batch b)
 {
-	cout << "pyrvi for" << endl;
+	//cout << "pyrvi for" << endl;
 	int sectionIdx=-1, shelfIdx=-1;
 	///checks it there is a place on the same shelf near the same batch
 	for (int i = 0; i < sectionCount; i++)
@@ -143,7 +131,7 @@ bool Warehouse::findPlace(Batch b)
 		}
 	}
 
-	cout << "vtori for" << endl;
+	//cout << "vtori for" << endl;
 	///There was no room for the batch on the same shelf
 	int possiblePlace[2048][2], placeCounter=0;
 	///going throgh the whole warehouse to find all the possible places for the batch
@@ -165,7 +153,7 @@ bool Warehouse::findPlace(Batch b)
 						///we have the same item in the batch but with different expiration date
 						///so that shelf is not valid for us to put our new batch
 						///thus we no longer need to check the other items on the shelf
-						cout << "lelele" << endl;
+						//cout << "lelele" << endl;
 						lamp = true;
 						break;
 					}
@@ -187,7 +175,6 @@ bool Warehouse::findPlace(Batch b)
 			}
 		}
 
-	cout << "oha qkata rabota" << endl;
 	if (placeCounter == 0)
 	{
 		///we didn't find a suitable place
@@ -211,14 +198,14 @@ bool Warehouse::findPlace(Batch b)
 			cout << minSection << " " << sectionIdx << " " << possiblePlace[i][0] << " " << possiblePlace[i][1] << endl;
 			if (abs(minSection - sectionIdx) > abs(possiblePlace[i][0] - sectionIdx))
 			{
-				cout << "tuk koga vlizame 1? "<<i<<" " << minSection << " " << minShelf << " " << possiblePlace[i][0] << possiblePlace[i][1] << endl;
+				//cout << "tuk koga vlizame 1? "<<i<<" " << minSection << " " << minShelf << " " << possiblePlace[i][0] << possiblePlace[i][1] << endl;
 				minSection = possiblePlace[i][0];
 				minShelf = possiblePlace[i][1];
 			}
 			if (abs(minSection - sectionIdx) == abs(possiblePlace[i][0] - sectionIdx)
 				&& abs(minShelf - shelfIdx) > abs(possiblePlace[i][1] - sectionIdx))
 			{
-				cout << "tuk koga vlizame 2? "<<i<<" " << minSection << " " << minShelf << " " << possiblePlace[i][0] << possiblePlace[i][1] << endl;
+				//cout << "tuk koga vlizame 2? "<<i<<" " << minSection << " " << minShelf << " " << possiblePlace[i][0] << possiblePlace[i][1] << endl;
 				minSection = possiblePlace[i][0];
 				minShelf = possiblePlace[i][1];
 			}
@@ -291,16 +278,18 @@ bool Warehouse::checkDate(char* date, long long fromDate, long long toDate)
 	long long num=0;
 	char comma;
 
-	sz--;
-	while (sz >= 0)
+	int i=0;
+	while (i<sz)
 	{
-		num = num * 10 + int(date[sz] - '0');
+		num = num * 10 + int(date[i] - '0');
+		i++;
 	}
 	
 	if (fromDate <= num)
 	{
 		return true;
 	}
+	return false;
 }
 
 Item Warehouse::getItemBy_ID(int ID)
@@ -373,13 +362,24 @@ void Warehouse::addBatch(char* itemName, char* suppName,int entryDay, int entryM
 
 	if (findPlace(tempBatch))
 	{
+
 		///timestamp of entrance
 		time_t timer;
 		time(&timer);
 		//time_t now = time(0);
 		char* dt = ctime(&timer);
-		cout << "pishem nova partida" << endl;
-		saveToLog(0, timer, tempBatch, dt);
+		struct tm tm1;
+
+		tm1.tm_year = entryYear - 1900;
+		tm1.tm_mon = entryMonth - 1;
+		tm1.tm_mday = entryDay;
+		tm1.tm_hour = 0;
+		tm1.tm_min = 0;
+		tm1.tm_sec = 0;
+
+		long long entryDate = mktime(&tm1);
+		//cout << "pishem nova partida" << endl;
+		saveToLog(0, entryDate, tempBatch, dt);
 	}
 }
 
@@ -539,19 +539,25 @@ void Warehouse::warehouseHistory(int fromDay, int fromMonth, int fromYear, int t
 	///check validity of the dates
 	///reads from log file all the changes and outputs them in the console
 	/// read every batch and find the correct asking date
-	struct tm tm;
+	struct tm tm1, tm2;
 
-	tm.tm_year = fromYear - 1900;
-	tm.tm_mon = fromMonth - 1;
-	tm.tm_mday = fromDay;
+	tm1.tm_year = fromYear - 1900;
+	tm1.tm_mon = fromMonth - 1;
+	tm1.tm_mday = fromDay;
+	tm1.tm_hour = 0;
+	tm1.tm_min = 0;
+	tm1.tm_sec = 0;
 
-	long long fromDate = mktime(&tm);
+	long long fromDate = mktime(&tm1);
 
-	tm.tm_year = toYear - 1900;
-	tm.tm_mon = toMonth - 1;
-	tm.tm_mday = toDay;
+	tm2.tm_year = toYear - 1900;
+	tm2.tm_mon = toMonth - 1;
+	tm2.tm_mday = toDay;
+	tm2.tm_hour = 0;
+	tm2.tm_min = 0;
+	tm2.tm_sec = 0;
 
-	long long toDate = mktime(&tm);
+	long long toDate = mktime(&tm2);
 
 	ifstream log(logFile);
 
